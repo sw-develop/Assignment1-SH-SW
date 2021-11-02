@@ -1,3 +1,4 @@
+version: '3'
 services:
   db:
     image: mongo
@@ -36,9 +37,9 @@ services:
   nginx:
     image: nginx:latest # nginx 서비스에서 사용할 도커 이미지
     ports:
-      - 80:80
+      - '80:80'
     environment:
       - TZ="Asia/Seoul"
     volumes:
-      - ./:/app
+      - .:/app
       - ./config/nginx:/etc/nginx/conf.d
