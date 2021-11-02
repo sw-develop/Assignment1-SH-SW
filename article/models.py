@@ -1,8 +1,10 @@
+from django.contrib.auth.models import User
 from djongo import models
 
 
 class CComment(models.Model):
-    _id = models.ObjectIdField()
+    comment_id = models.IntegerField()
+    username = models.CharField(max_length=150)
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -11,21 +13,18 @@ class CComment(models.Model):
         db_table = "ccomment"
 
 
-class AComment(models.Model):
-    _id = models.ObjectIdField()
-    ccomments = models.ArrayField(
-        model_container=CComment
-    )
+class Comment(models.Model):
+    article_id = models.IntegerField()
+    username = models.CharField(max_length=150)
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = "acomment"
+        db_table = "comment"
 
 
 class Category(models.Model):
-    _id = models.ObjectIdField()
     name = models.CharField(max_length=30)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -35,13 +34,8 @@ class Category(models.Model):
 
 
 class Article(models.Model):
-    _id = models.ObjectIdField()
-    acomments = models.ArrayField(
-        model_container=AComment
-    )
-    category = models.EmbeddedField(
-        model_container=Category
-    )
+    category_id = models.IntegerField()
+    username = models.CharField(max_length=150)
     title = models.CharField(max_length=100)
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
