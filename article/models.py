@@ -38,8 +38,17 @@ class Article(models.Model):
     username = models.CharField(max_length=150)
     title = models.CharField(max_length=100)
     content = models.TextField()
+    views = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "article"
+
+
+class ViewLog(models.Model):
+    article_id = models.IntegerField()
+    user_id = models.IntegerField()
+
+    class Meta:
+        db_table = "view_log"
