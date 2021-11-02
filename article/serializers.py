@@ -1,10 +1,9 @@
 from rest_framework import serializers
 
-from article.models import Article, Comment, CComment
+from article.models import Article, Comment, CComment, Category
 
 
 class ArticleSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Article
         fields = (
@@ -22,7 +21,6 @@ class ArticleSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Comment
         fields = (
@@ -38,7 +36,6 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class CCommentSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = CComment
         fields = (
@@ -51,3 +48,12 @@ class CCommentSerializer(serializers.ModelSerializer):
         if 'username' in data.keys():
             raise serializers.ValidationError({'username': 'Could not be modified'})
         return super(CCommentSerializer, self).validate(data)
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = (
+            'id',
+            'name',
+        )

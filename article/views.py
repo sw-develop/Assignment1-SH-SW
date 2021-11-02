@@ -1,12 +1,11 @@
-
 from django.shortcuts import render, get_object_or_404
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from article.models import Article, Comment, CComment, ViewLog
-from article.serializers import ArticleSerializer, CommentSerializer, CCommentSerializer
+from article.models import Article, Comment, CComment, ViewLog, Category
+from article.serializers import ArticleSerializer, CommentSerializer, CCommentSerializer, CategorySerializer
 
 
 class ArticleViewSet(viewsets.GenericViewSet):
@@ -189,3 +188,21 @@ class CCommentViewSet(viewsets.GenericViewSet):
             raise PermissionDenied
         ccomment.delete()
         return Response('{ccomment deleted}')
+
+
+class CategoryViewSet(viewsets.GenericViewSet):
+    queryset = Category.objects.all()
+    serializer_class = ArticleSerializer
+    permission_classes = [IsAuthenticated(), ]
+
+    def get_permissions(self):
+        if self.action in ('list', 'retrieve'):
+            return [AllowAny(), ]
+        return self.permission_classes
+
+    def list(self, request):
+        """
+        GET /categories/
+        """
+        categories = Category.objects.all()
+        return Response(CategorySerializer(categories, many=True).data)
