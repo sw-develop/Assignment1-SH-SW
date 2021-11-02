@@ -46,9 +46,16 @@ class ArticleViewSet(viewsets.GenericViewSet):
         -content
         -title
         """
+        category_id = request.query_params.get('category_id')
         content = request.query_params.get('content')
         title = request.query_params.get('title')
         searching_options = dict()
+        if category_id is not None:
+            try:
+                category_id = int(category_id)
+            except ValueError:
+                return Response({"error": "category_id should be number."})
+            searching_options['category_id'] = category_id
         if content is not None:
             searching_options['content__icontains'] = content
         if title is not None:
