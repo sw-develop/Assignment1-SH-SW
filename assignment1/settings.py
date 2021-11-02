@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
-
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -25,7 +25,8 @@ SECRET_KEY = 'django-insecure-g(tzs7*72ai@*+@jz(1-p408n!a0nv)pufv2#5f-tu%57fqi38
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
+if DEBUG:
+    ALLOWED_HOSTS += ['*', ]
 # Application definition
 
 INSTALLED_APPS = [
@@ -84,7 +85,10 @@ DATABASES = {
         'ENGINE': 'djongo',
         'NAME': 'assignment1',
         'CLIENT': {
-            'host': '127.0.0.1',
+            'host': os.environ.get('DJANGO_DB_HOST', '127.0.0.1'),
+            'port': 27017,
+            'username': 'root',
+            'password': 'qwerqwer123',
         }
     }
 }

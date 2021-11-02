@@ -1,0 +1,27 @@
+services:
+  db:
+    image: mongo
+    volumes:
+      - ./docker/data:/var/lib/mongo/data
+    environment:
+      - MONGO_HOST=127.0.0.1
+      - MONGO_PORT=27017
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=qwerqwer123
+      - MONGO_INITDB_DATABASE=assignment1
+    container_name: "docker-mongodb"
+
+  django:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    volumes:
+      - ./:/app/
+    command: [ "./manage.py", "runserver", "0:8000" ]
+    environment:
+      - DJANGO_DB_HOST=db
+    depends_on:
+      - db
+    restart: always
+    ports:
+      - 8000:8000
