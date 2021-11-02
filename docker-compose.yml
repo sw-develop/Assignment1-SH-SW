@@ -9,6 +9,7 @@ services:
       - MONGO_INITDB_ROOT_USERNAME=root
       - MONGO_INITDB_ROOT_PASSWORD=qwerqwer123
       - MONGO_INITDB_DATABASE=assignment1
+      - TZ="Asia/Seoul"
     container_name: "docker-mongodb"
 
   django:
@@ -25,6 +26,7 @@ services:
         python manage.py runserver 0.0.0.0:8000
     environment:
       - DJANGO_DB_HOST=db
+      - TZ="Asia/Seoul"
     depends_on:
       - db
     restart: always
@@ -34,9 +36,9 @@ services:
   nginx:
     image: nginx:latest # nginx 서비스에서 사용할 도커 이미지
     ports:
-      - "80:80"
+      - 80:80
+    environment:
+      - TZ="Asia/Seoul"
     volumes:
       - ./:/app
       - ./config/nginx:/etc/nginx/conf.d
-    depends_on: # 서비스 간의 종속성 표현
-      - django
