@@ -1,18 +1,21 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from rest_framework import status, viewsets
 # Create your views here.
 from rest_framework.authentication import TokenAuthentication
+from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.response import Response
 
-from article.models import Article, Category
-from article.serializers import ArticleSerializer
+from article.models import Article, Category, Comment, CComment
+from article.serializers import ArticleSerializer, CommentSerializer, CCommentSerializer
+from bson import ObjectId
 
 
 class ArticleViewSet(viewsets.GenericViewSet):
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated(), ]
 
     def get_permissions(self):
         if self.action in ('list', 'retrieve'):
@@ -31,48 +34,139 @@ class ArticleViewSet(viewsets.GenericViewSet):
         #  if request.user.is_anonymous:
         #     raise NotAuthenticated
         if not data['title'] or not data['content'] or not data['category_id']:
-            return Response({"error": "title and content are required field."}, status=status.HTTP_400_BAD_REQUEST)
-        category = get_object_or_404(Category, id=data['category_id'])
-        article = Article.objects.create(title=data['title'], content=data['content'], category=category, user=request.user)
+            return Response({"error": "title, content, category_id are required field."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        category = get_object_or_404(Article, id=data['category_id'])
+        article = Article.objects.create(title=data['title'], content=data['content'], category_id=category.id,
+                                         username=request.user.username)
         return Response(self.get_serializer(article).data)
 
     def list(self, request):
         """
-        GET /posts/
+        GET /articles/
         query params
-        - offset
-        - limit
+        -
+        -
         """
-        posts = Post.objects.all()
+        articles = Article.objects.all()
         paginator = self.paginator
-        paginated_posts = paginator.paginate_queryset(posts, request)
+        paginated_posts = paginator.paginate_queryset(articles, request)
         return paginator.get_paginated_response(self.get_serializer(paginated_posts, many=True).data)
 
     def retrieve(self, request, pk):
         """
-        GET /posts/{post_id}/
+        GET /articles/{article_id}/
         """
-        post = get_object_or_404(Post, id=pk)
-        return Response(self.get_serializer(post).data)
+        article = get_object_or_404(Article, id=pk)
+        return Response(self.get_serializer(article).data)
 
     def partial_update(self, request, pk):
         """
         PATCH /posts/{post_id}/
         """
-        post = get_object_or_404(Post, id=pk)
-        if post.author != request.user:
+        article = get_object_or_404(Article, id=pk)
+        if article.username != request.user.username:
             raise PermissionDenied
-        serializer = self.get_serializer(post, data=request.data, partial=True)
+        serializer = self.get_serializer(article, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        serializer.update(post, serializer.validated_data)
+        serializer.update(article, serializer.validated_data)
         return Response(serializer.data)
 
     def destroy(self, request, pk):
         """
         DELETE /posts/{post_id}/
         """
-        post = get_object_or_404(Post, id=pk)
-        if post.author != request.user:
+        article = get_object_or_404(Article, id=pk)
+        if article.username != request.user.username:
             raise PermissionDenied
-        post.delete()
-        return Response('{post deleted}')
+        article.delete()
+        return Response('{article deleted}')
+
+    @action(detail=True, methods=['POST', 'GET'])
+    def comments(self, request, pk):
+        """
+        POST /articles/{article_id}/comments/
+        data params
+        - content(required)
+        """
+        if request.method == 'POST':
+            content = request.data['content']
+
+            if not content:
+                return Response({"error": "content required field."},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+            comment = Comment.objects.create(username=request.user.username, content=content, article_id=pk)
+            return Response(status=status.HTTP_201_CREATED)
+
+        if request.method == 'GET':
+            comments = Comment.objects.filter(article_id=pk)
+            paginator = self.paginator
+            paginated_comments = paginator.paginate_queryset(comments, request)
+            return paginator.get_paginated_response(CommentSerializer(paginated_comments, many=True).data)
+
+
+class CommentViewSet(viewsets.GenericViewSet):
+    queryset = Comment.objects.all()
+    serializer_class = ArticleSerializer
+    permission_classes = [IsAuthenticated(), ]
+
+    def get_permissions(self):
+        if self.action in ('list', 'retrieve'):
+            return [AllowAny(), ]
+        return self.permission_classes
+
+    def destroy(self, request, pk):
+        """
+        DELETE /comments/{comment_id}/
+        """
+        comment = get_object_or_404(Comment, id=pk)
+        if comment.username != request.user.username:
+            raise PermissionDenied
+        comment.delete()
+        return Response('{comment deleted}')
+
+    @action(detail=True, methods=['POST', 'GET'])
+    def ccomments(self, request, pk):
+        """
+        POST /comments/{comment_id}/ccomments/
+        data params
+        - content(required)
+        """
+        if request.method == 'POST':
+            content = request.data['content']
+
+            if not content:
+                return Response({"error": "content required field."},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+            ccomment = CComment.objects.create(username=request.user.username, content=content, comment_id=pk)
+            return Response(status=status.HTTP_201_CREATED)
+
+        if request.method == 'GET':
+            ccomments = CComment.objects.filter(comment_id=pk)
+            paginator = self.paginator
+            paginated_ccomments = paginator.paginate_queryset(ccomments, request)
+            return paginator.get_paginated_response(CCommentSerializer(paginated_ccomments, many=True).data)
+
+
+class CCommentViewSet(viewsets.GenericViewSet):
+    queryset = CComment.objects.all()
+    serializer_class = ArticleSerializer
+    permission_classes = [IsAuthenticated(), ]
+
+    def get_permissions(self):
+        if self.action in ('list', 'retrieve'):
+            return [AllowAny(), ]
+        return self.permission_classes
+
+    def destroy(self, request, pk):
+        """
+        DELETE /ccomments/{ccomment_id}/
+        """
+        ccomment = get_object_or_404(CComment, id=pk)
+        if ccomment.username != request.user.username:
+            raise PermissionDenied
+        ccomment.delete()
+        return Response('{ccomment deleted}')
