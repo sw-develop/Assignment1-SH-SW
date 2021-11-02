@@ -43,10 +43,18 @@ class ArticleViewSet(viewsets.GenericViewSet):
         """
         GET /articles/
         query params
-        -
-        -
+        -content
+        -title
         """
-        articles = Article.objects.all()
+        content = request.query_params.get('content')
+        title = request.query_params.get('title')
+        searching_options = dict()
+        if content is not None:
+            searching_options['content__icontains'] = content
+        if title is not None:
+            searching_options['title__icontains'] = title
+
+        articles = Article.objects.filter(**searching_options)
         paginator = self.paginator
         paginated_posts = paginator.paginate_queryset(articles, request)
         return paginator.get_paginated_response(self.get_serializer(paginated_posts, many=True).data)
