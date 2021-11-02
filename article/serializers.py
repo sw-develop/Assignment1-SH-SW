@@ -12,6 +12,7 @@ class ArticleSerializer(serializers.ModelSerializer):
             'username',
             'title',
             'content',
+            'views',
         )
 
     def validate(self, data):

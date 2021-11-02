@@ -1,15 +1,12 @@
+
 from django.shortcuts import render, get_object_or_404
 from rest_framework import status, viewsets
-# Create your views here.
-from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-
-from article.models import Article, Category, Comment, CComment
+from article.models import Article, Comment, CComment, ViewLog
 from article.serializers import ArticleSerializer, CommentSerializer, CCommentSerializer
-from bson import ObjectId
 
 
 class ArticleViewSet(viewsets.GenericViewSet):
@@ -46,10 +43,25 @@ class ArticleViewSet(viewsets.GenericViewSet):
         """
         GET /articles/
         query params
-        -
-        -
+        -content
+        -title
         """
-        articles = Article.objects.all()
+        category_id = request.query_params.get('category_id')
+        content = request.query_params.get('content')
+        title = request.query_params.get('title')
+        searching_options = dict()
+        if category_id is not None:
+            try:
+                category_id = int(category_id)
+            except ValueError:
+                return Response({"error": "category_id should be number."})
+            searching_options['category_id'] = category_id
+        if content is not None:
+            searching_options['content__icontains'] = content
+        if title is not None:
+            searching_options['title__icontains'] = title
+
+        articles = Article.objects.filter(**searching_options)
         paginator = self.paginator
         paginated_posts = paginator.paginate_queryset(articles, request)
         return paginator.get_paginated_response(self.get_serializer(paginated_posts, many=True).data)
@@ -59,7 +71,14 @@ class ArticleViewSet(viewsets.GenericViewSet):
         GET /articles/{article_id}/
         """
         article = get_object_or_404(Article, id=pk)
-        return Response(self.get_serializer(article).data)
+        if not request.user.is_anonymous:
+            _, is_created = ViewLog.objects.get_or_create(user_id=request.user.id, article_id=pk)
+            if is_created:
+                article.views += 1
+                article.save()
+
+        rtn = self.get_serializer(article).data
+        return Response(rtn)
 
     def partial_update(self, request, pk):
         """
