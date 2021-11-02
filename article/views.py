@@ -33,7 +33,7 @@ class ArticleViewSet(viewsets.GenericViewSet):
             return Response({"error": "title, content, category_id are required field."},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        category = get_object_or_404(Article, id=data['category_id'])
+        category = get_object_or_404(Category, id=data['category_id'])
         article = Article.objects.create(title=data['title'], content=data['content'], category_id=category.id,
                                          username=request.user.username)
         return Response(self.get_serializer(article).data)
